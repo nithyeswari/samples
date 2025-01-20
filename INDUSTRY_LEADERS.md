@@ -80,7 +80,7 @@
 - [airbnb/aerosolve](https://github.com/airbnb/aerosolve) - Machine learning
 - [airbnb/react-dates](https://github.com/airbnb/react-dates) - Date picker
 ## BOOKS
-- (https://github.com/PacktPublishing/) - Packt Publishing
+- [PacktPublishing](https://github.com/PacktPublishing/) - Packt Publishing
 
 ## Key Focus Areas
 
