@@ -5,8 +5,8 @@ Welcome to the comprehensive React ecosystem documentation. This repository cont
 ## Table of Contents
 
 ### Core Fundamentals
-- [React Basics](docs/core/REACT_BASICS.md)
-- [State Management](docs/core/STATE_MANAGEMENT.md)
+- [React Basics](REACT_BASICS.md)
+- [State Management](STATE_MANAGEMENT.md)
 - [Routing](docs/core/ROUTING.md)
 
 ### Development Tools
