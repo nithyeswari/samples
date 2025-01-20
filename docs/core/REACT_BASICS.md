@@ -209,6 +209,7 @@ function Form() {
 6. Follow the DRY (Don't Repeat Yourself) principle
 
 ## Related Topics
+- [Application Structure and Key Features](../core/APPLICTAION.md)
 - [State Management](../core/STATE_MANAGEMENT.md)
 - [Component Patterns](../best-practices/CODE_ORGANIZATION.md)
 - [Performance Optimization](../performance/CODE_OPTIMIZATION.md)
