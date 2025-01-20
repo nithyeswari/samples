@@ -1,4 +1,4 @@
-# 🌟 Top 100 GitHub Repositories for Design Patterns
+# 🌟 Top GitHub Repositories for Design Patterns
 
 A curated list of the most valuable GitHub repositories for learning and implementing design patterns, architectural patterns, and programming patterns.
 
