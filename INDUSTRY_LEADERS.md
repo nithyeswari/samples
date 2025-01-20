@@ -79,8 +79,13 @@
 - [airbnb/knowledge-repo](https://github.com/airbnb/knowledge-repo) - Knowledge sharing
 - [airbnb/aerosolve](https://github.com/airbnb/aerosolve) - Machine learning
 - [airbnb/react-dates](https://github.com/airbnb/react-dates) - Date picker
+
+[IBM](https://github.com/IBM)  
 ## BOOKS
 - [PacktPublishing](https://github.com/PacktPublishing/) - Packt Publishing
+
+
+  https://github.com/k8spatterns
 
 ## Key Focus Areas
 
