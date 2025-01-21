@@ -85,6 +85,8 @@
 - [PacktPublishing](https://github.com/PacktPublishing/) - Packt Publishing
 
 
+[TrainingByPackt](https://github.com/TrainingByPackt)
+
   https://github.com/k8spatterns
 
 ## Key Focus Areas
