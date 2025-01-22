@@ -390,6 +390,9 @@ A curated list of the most valuable GitHub repositories for learning and impleme
     - URL: web-components/patterns
     - Description: Web Components patterns
 
+## Spring boot
+[eugenp](https://github.com/eugenp)
+
 ## Contributing
 
 Feel free to suggest additional repositories by creating a pull request. Please ensure your suggestion includes:
