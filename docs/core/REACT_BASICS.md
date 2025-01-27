@@ -211,7 +211,7 @@ function Form() {
 ## Related Topics
 - [Application Structure and Key Features](../core/APPLICTAION.md)
 - [State Management](../core/STATE_MANAGEMENT.md)
-- [Component Patterns](../best-practices/CODE_ORGANIZATION.md)
+- [Design Patterns](../core/DESIGN_PATTERNS.md)
 - [Performance Optimization](../performance/CODE_OPTIMIZATION.md)
 
 ## Additional Resources
