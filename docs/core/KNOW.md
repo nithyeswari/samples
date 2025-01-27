@@ -725,6 +725,7 @@ function SecureComponent() {
     <div
       dangerouslySetInnerHTML={{
         __html: sanitize
+```
 
  
 ## 1. Implement a Custom Hook for Managing Async State with Error Boundaries
