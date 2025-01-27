@@ -212,6 +212,7 @@ function Form() {
 - [Application Structure and Key Features](../core/APPLICATION.md)
 - [State Management](../core/STATE_MANAGEMENT.md)
 - [Design Patterns](../core/DESIGN_PATTERNS.md)
+- [Navigation Patterns](../core/NAVIGATION.md)
 - [Performance Optimization](../performance/CODE_OPTIMIZATION.md)
 
 ## Additional Resources
