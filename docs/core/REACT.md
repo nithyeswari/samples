@@ -8,6 +8,7 @@ Welcome to the comprehensive React ecosystem documentation. This repository cont
 - [React Basics](REACT_BASICS.md)
 - [State Management](STATE_MANAGEMENT.md)
 - [Routing](docs/core/ROUTING.md)
+- [Latest](docs/core/LATEST.md)
 
 ### Development Tools
 - [Build Tools](docs/dev-tools/BUILD_TOOLS.md)
