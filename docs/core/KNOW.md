@@ -725,3 +725,516 @@ function SecureComponent() {
     <div
       dangerouslySetInnerHTML={{
         __html: sanitize
+
+ 
+## 1. Implement a Custom Hook for Managing Async State with Error Boundaries
+
+**Question:** Create a custom hook that handles async operations with proper loading, error, and success states, while integrating with React's Error Boundary system.
+
+**Answer:**
+```jsx
+// Custom hook implementation
+function useAsyncOperation() {
+  const [state, setState] = useState({
+    loading: false,
+    error: null,
+    data: null
+  });
+
+  const execute = useCallback(async (asyncFunction) => {
+    setState({ loading: true, error: null, data: null });
+    try {
+      const data = await asyncFunction();
+      setState({ loading: false, error: null, data });
+    } catch (error) {
+      setState({ loading: false, error, data: null });
+      // Propagate to Error Boundary
+      throw error;
+    }
+  }, []);
+
+  return { ...state, execute };
+}
+
+// Error Boundary Component
+class AsyncErrorBoundary extends React.Component {
+  state = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback(this.state.error);
+    }
+    return this.props.children;
+  }
+}
+
+// Usage Example
+function DataFetcher() {
+  const { loading, error, data, execute } = useAsyncOperation();
+
+  useEffect(() => {
+    execute(async () => {
+      const response = await fetch('https://api.example.com/data');
+      return response.json();
+    });
+  }, [execute]);
+
+  return (
+    <AsyncErrorBoundary
+      fallback={(error) => <div>Error: {error.message}</div>}
+    >
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <div>{data && JSON.stringify(data)}</div>
+      )}
+    </AsyncErrorBoundary>
+  );
+}
+```
+
+## 2. Implement a Virtual Scroll Component with Dynamic Heights
+
+**Question:** Create a virtual scroll component that can handle items with varying heights efficiently.
+
+**Answer:**
+```jsx
+function VirtualScroll({ items, estimatedItemHeight = 50 }) {
+  const [visibleItems, setVisibleItems] = useState([]);
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef(null);
+  const itemsRef = useRef(new Map());
+
+  const calculateVisibleItems = useCallback(() => {
+    if (!containerRef.current) return;
+
+    const containerHeight = containerRef.current.clientHeight;
+    let currentOffset = 0;
+    let startIndex = 0;
+    let endIndex = 0;
+
+    // Find start index
+    for (let i = 0; i < items.length; i++) {
+      const height = itemsRef.current.get(i)?.height || estimatedItemHeight;
+      if (currentOffset + height > scrollTop) {
+        startIndex = i;
+        break;
+      }
+      currentOffset += height;
+    }
+
+    // Find end index
+    currentOffset = 0;
+    for (let i = startIndex; i < items.length; i++) {
+      const height = itemsRef.current.get(i)?.height || estimatedItemHeight;
+      if (currentOffset > containerHeight) {
+        endIndex = i;
+        break;
+      }
+      currentOffset += height;
+    }
+
+    setVisibleItems(items.slice(startIndex, endIndex + 1));
+  }, [items, estimatedItemHeight, scrollTop]);
+
+  useEffect(() => {
+    calculateVisibleItems();
+  }, [calculateVisibleItems]);
+
+  const handleScroll = useCallback((e) => {
+    setScrollTop(e.target.scrollTop);
+  }, []);
+
+  const measureItem = useCallback((element, index) => {
+    if (element) {
+      itemsRef.current.set(index, {
+        height: element.getBoundingClientRect().height
+      });
+    }
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      onScroll={handleScroll}
+      style={{ height: '100%', overflow: 'auto' }}
+    >
+      <div style={{ height: getTotalHeight(items, itemsRef.current) }}>
+        {visibleItems.map((item, index) => (
+          <div key={index} ref={(el) => measureItem(el, index)}>
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+## 3. Create a State Management System with Time Travel
+
+**Question:** Implement a custom state management system that includes time-travel debugging capabilities similar to Redux DevTools.
+
+**Answer:**
+```jsx
+function createTimeTravel(reducer, initialState) {
+  const history = [{ state: initialState, action: 'INIT' }];
+  let currentIndex = 0;
+
+  return {
+    dispatch(action) {
+      const nextState = reducer(history[currentIndex].state, action);
+      currentIndex++;
+      history.splice(currentIndex);
+      history.push({ state: nextState, action });
+      return nextState;
+    },
+
+    undo() {
+      if (currentIndex > 0) {
+        currentIndex--;
+        return history[currentIndex].state;
+      }
+      return history[currentIndex].state;
+    },
+
+    redo() {
+      if (currentIndex < history.length - 1) {
+        currentIndex++;
+        return history[currentIndex].state;
+      }
+      return history[currentIndex].state;
+    },
+
+    jumpTo(index) {
+      currentIndex = Math.min(Math.max(0, index), history.length - 1);
+      return history[currentIndex].state;
+    },
+
+    getHistory() {
+      return history;
+    },
+
+    getCurrentState() {
+      return history[currentIndex].state;
+    }
+  };
+}
+
+// Usage with React
+function useTimeTravel(reducer, initialState) {
+  const [timeTravel] = useState(() => createTimeTravel(reducer, initialState));
+  const [state, setState] = useState(initialState);
+
+  const dispatch = useCallback((action) => {
+    const nextState = timeTravel.dispatch(action);
+    setState(nextState);
+  }, [timeTravel]);
+
+  const undo = useCallback(() => {
+    const previousState = timeTravel.undo();
+    setState(previousState);
+  }, [timeTravel]);
+
+  const redo = useCallback(() => {
+    const nextState = timeTravel.redo();
+    setState(nextState);
+  }, [timeTravel]);
+
+  return { state, dispatch, undo, redo, history: timeTravel.getHistory() };
+}
+```
+
+## 4. Build a React Form Library with Complex Validation
+
+**Question:** Create a form management library that handles complex validation, nested fields, and array fields with TypeScript support.
+
+**Answer:**
+```typescript
+type ValidationRule = {
+  validate: (value: any) => boolean | Promise<boolean>;
+  message: string;
+};
+
+type FieldConfig = {
+  initialValue: any;
+  validationRules?: ValidationRule[];
+  dependencies?: string[];
+};
+
+type FormConfig = {
+  fields: Record<string, FieldConfig>;
+};
+
+function useForm<T extends Record<string, any>>(config: FormConfig) {
+  const [values, setValues] = useState<T>(() => {
+    const initialValues: any = {};
+    Object.entries(config.fields).forEach(([name, field]) => {
+      initialValues[name] = field.initialValue;
+    });
+    return initialValues;
+  });
+
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const validateField = async (name: string, value: any) => {
+    const field = config.fields[name];
+    if (!field.validationRules) return [];
+
+    const fieldErrors: string[] = [];
+    for (const rule of field.validationRules) {
+      const isValid = await rule.validate(value);
+      if (!isValid) {
+        fieldErrors.push(rule.message);
+      }
+    }
+
+    return fieldErrors;
+  };
+
+  const validateDependentFields = async (name: string) => {
+    const dependentFields = Object.entries(config.fields).filter(([_, field]) => 
+      field.dependencies?.includes(name)
+    );
+
+    const newErrors = { ...errors };
+    for (const [fieldName] of dependentFields) {
+      const fieldErrors = await validateField(fieldName, values[fieldName]);
+      newErrors[fieldName] = fieldErrors;
+    }
+
+    setErrors(newErrors);
+  };
+
+  const handleChange = async (name: string, value: any) => {
+    setValues(prev => ({ ...prev, [name]: value }));
+    setTouched(prev => ({ ...prev, [name]: true }));
+
+    const fieldErrors = await validateField(name, value);
+    setErrors(prev => ({ ...prev, [name]: fieldErrors }));
+    await validateDependentFields(name);
+  };
+
+  const handleSubmit = async (onSubmit: (values: T) => void) => {
+    const allErrors: Record<string, string[]> = {};
+    for (const [name, value] of Object.entries(values)) {
+      const fieldErrors = await validateField(name, value);
+      if (fieldErrors.length > 0) {
+        allErrors[name] = fieldErrors;
+      }
+    }
+
+    if (Object.keys(allErrors).length === 0) {
+      onSubmit(values);
+    } else {
+      setErrors(allErrors);
+    }
+  };
+
+  return {
+    values,
+    errors,
+    touched,
+    handleChange,
+    handleSubmit
+  };
+}
+
+// Usage Example
+const form = useForm({
+  fields: {
+    username: {
+      initialValue: '',
+      validationRules: [
+        {
+          validate: (value) => value.length >= 3,
+          message: 'Username must be at least 3 characters'
+        }
+      ]
+    },
+    password: {
+      initialValue: '',
+      validationRules: [
+        {
+          validate: (value) => value.length >= 8,
+          message: 'Password must be at least 8 characters'
+        }
+      ]
+    },
+    confirmPassword: {
+      initialValue: '',
+      dependencies: ['password'],
+      validationRules: [
+        {
+          validate: (value) => value === form.values.password,
+          message: 'Passwords must match'
+        }
+      ]
+    }
+  }
+});
+```
+
+## 5. Implement a Complex Animation System
+
+**Question:** Create an animation system that can handle complex choreographed animations with multiple elements and timing dependencies.
+
+**Answer:**
+```jsx
+type AnimationConfig = {
+  duration: number;
+  delay?: number;
+  easing?: string;
+  dependencies?: string[];
+};
+
+type AnimationSequence = Record<string, AnimationConfig>;
+
+function useAnimationSequence(sequence: AnimationSequence) {
+  const [animatingElements, setAnimatingElements] = useState(new Set<string>());
+  const [completedElements, setCompletedElements] = useState(new Set<string>());
+  const elementRefs = useRef<Record<string, HTMLElement>>({});
+
+  const canAnimate = useCallback((elementId: string) => {
+    const config = sequence[elementId];
+    if (!config.dependencies?.length) return true;
+
+    return config.dependencies.every(dep => completedElements.has(dep));
+  }, [sequence, completedElements]);
+
+  const animate = useCallback((elementId: string) => {
+    const element = elementRefs.current[elementId];
+    const config = sequence[elementId];
+
+    if (!element || !canAnimate(elementId)) return;
+
+    setAnimatingElements(prev => new Set(prev).add(elementId));
+
+    const animation = element.animate([
+      { opacity: 0, transform: 'translateY(20px)' },
+      { opacity: 1, transform: 'translateY(0)' }
+    ], {
+      duration: config.duration,
+      delay: config.delay || 0,
+      easing: config.easing || 'ease-out',
+      fill: 'forwards'
+    });
+
+    animation.onfinish = () => {
+      setAnimatingElements(prev => {
+        const next = new Set(prev);
+        next.delete(elementId);
+        return next;
+      });
+      setCompletedElements(prev => new Set(prev).add(elementId));
+    };
+  }, [canAnimate]);
+
+  const registerElement = useCallback((elementId: string, element: HTMLElement | null) => {
+    if (element) {
+      elementRefs.current[elementId] = element;
+      if (canAnimate(elementId)) {
+        animate(elementId);
+      }
+    }
+  }, [animate, canAnimate]);
+
+  return {
+    registerElement,
+    isAnimating: (elementId: string) => animatingElements.has(elementId),
+    isCompleted: (elementId: string) => completedElements.has(elementId)
+  };
+}
+
+// Usage Example
+function AnimatedSequence() {
+  const sequence = useAnimationSequence({
+    header: {
+      duration: 500
+    },
+    sidebar: {
+      duration: 700,
+      delay: 200,
+      dependencies: ['header']
+    },
+    content: {
+      duration: 1000,
+      delay: 300,
+      dependencies: ['sidebar']
+    }
+  });
+
+  return (
+    <div>
+      <header ref={el => sequence.registerElement('header', el)}>
+        Header Content
+      </header>
+      <aside ref={el => sequence.registerElement('sidebar', el)}>
+        Sidebar Content
+      </aside>
+      <main ref={el => sequence.registerElement('content', el)}>
+        Main Content
+      </main>
+    </div>
+  );
+}
+```
+
+## 6. Create a Complex Data Grid with Virtual Scrolling and Dynamic Columns
+
+**Question:** Implement a data grid component that supports virtual scrolling, dynamic columns, sorting, filtering, and column resizing.
+
+**Answer:**
+```typescript
+type Column<T> = {
+  key: string;
+  title: string;
+  width: number;
+  resizable?: boolean;
+  sortable?: boolean;
+  formatter?: (value: any) => React.ReactNode;
+};
+
+type DataGridProps<T> = {
+  columns: Column<T>[];
+  data: T[];
+  rowHeight: number;
+  visibleRows: number;
+};
+
+function DataGrid<T extends Record<string, any>>({
+  columns,
+  data,
+  rowHeight,
+  visibleRows
+}: DataGridProps<T>) {
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+  
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() =>
+    columns.reduce((acc, col) => ({ ...acc, [col.key]: col.width }), {})
+  );
+
+  const [scrollTop, setScrollTop] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Virtual scrolling logic
+  const startIndex = Math.floor(scrollTop / rowHeight);
+  const endIndex = Math.min(
+    startIndex + visibleRows,
+    data.length
+  );
+  const visibleData = data.slice(startIndex, endIndex);
+
+  // Sorting logic
+  const sortedData = useMemo(() => {
+    if (!sortConfig) return data;
+
+    return [...data].sort((a, b)
