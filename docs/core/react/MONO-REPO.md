@@ -115,9 +115,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Turborepo](https://turborepo.org/)
 - [pnpm](https://pnpm.io/)
 
-## 🤔 Support
-
-For support, email support@your-org.com or open an issue.
-```
-
-Would you like me to add any specific sections or elaborate on any part?
