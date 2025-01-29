@@ -18,6 +18,7 @@ monorepo/
 │   ├── update-module/  # Update interface
 │   ├── delete-module/  # Deletion interface
 │   └── view-module/    # View interface
+
 ```
 
 ## 🚀 Getting Started
