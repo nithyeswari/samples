@@ -8,10 +8,13 @@ A modern React-based monorepo containing modules for Create, Read, Update, and D
 ## 📚 Project Structure
 
 ```
-monorepo/
+
   create-module/  # Creation interface
+
   update-module/  # Update interface
+
   delete-module/  # Deletion interface
+
   view-module/    # View interface
 
 ```
