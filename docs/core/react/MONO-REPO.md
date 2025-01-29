@@ -9,15 +9,10 @@ A modern React-based monorepo containing modules for Create, Read, Update, and D
 
 ```
 monorepo/
-├── packages/
-│   ├── shared-ui/      # Reusable UI components
-│   ├── core/           # Core utilities and types
-│   └── api-client/     # API communication layer
-├── apps/
-│   ├── create-module/  # Creation interface
-│   ├── update-module/  # Update interface
-│   ├── delete-module/  # Deletion interface
-│   └── view-module/    # View interface
+  create-module/  # Creation interface
+  update-module/  # Update interface
+  delete-module/  # Deletion interface
+  view-module/    # View interface
 
 ```
 
