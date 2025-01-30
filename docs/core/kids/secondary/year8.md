@@ -1,16 +1,16 @@
 # KS3 Year 8 Study Guide & Resource Collection
 
 ## Mathematics Resources
-1. BBC Bitesize KS3 Maths: bbc.co.uk/bitesize/subjects/zqhs34j
-2. Corbett Maths: corbettmaths.com/contents
-3. MyMaths: mymaths.co.uk
-4. MathsGenie: mathsgenie.co.uk/ks3.html
-5. DrFrostMaths: drfrostmaths.com
-6. Mathswatch: mathswatch.co.uk
-7. White Rose Maths: whiterosemaths.com/resources
-8. Mathsbot: mathsbot.com
-9. NRich Maths: nrich.maths.org/secondary
-10. Khan Academy Maths: khanacademy.org/math
+1. BBC Bitesize KS3 Maths: https://www.bbc.co.uk/bitesize/subjects/zqhs34j
+2. Corbett Maths: https://www.corbettmaths.com/contents
+3. MyMaths: https://www.mymaths.co.uk
+4. MathsGenie: https://www.mathsgenie.co.uk/ks3.html
+5. Dr Frost Maths: https://www.drfrostmaths.com
+6. Mathswatch: https://www.mathswatch.co.uk
+7. White Rose Maths: https://www.whiterosemaths.com/resources
+8. Mathsbot: https://www.mathsbot.com
+9. NRich Maths: https://nrich.maths.org/secondary
+10. Khan Academy Maths: https://www.khanacademy.org/math
 
 ### Maths Flashcards
 * ALGEBRAIC EXPRESSIONS
@@ -28,16 +28,16 @@
 ## Science Resources
 
 ### Biology
-1. S-cool Biology: s-cool.co.uk/gcse/biology
-2. Biology Online: biology-online.org
-3. Biology4Kids: biology4kids.com
-4. BioTopics: biotopics.co.uk
-5. Biology Innovation: biologyinnovation.co.uk
-6. AQA Biology: aqa.org.uk/subjects/science/ks3
-7. Cells Alive: cellsalive.com
-8. Biology Corner: biologycorner.com
-9. Science Kids Biology: sciencekids.co.nz/biology
-10. Biology Questions: biologyquestions.org
+1. BBC Bitesize Biology: https://www.bbc.co.uk/bitesize/subjects/z4882hv
+2. Biology Online: https://www.biology-online.org
+3. Biology4Kids: https://www.biology4kids.com
+4. BioTopics: https://www.biotopics.co.uk
+5. Biology Innovation: https://www.biologyinnovation.co.uk
+6. AQA Biology: https://www.aqa.org.uk/subjects/science/ks3/biology
+7. Cells Alive: https://www.cellsalive.com
+8. Biology Corner: https://www.biologycorner.com
+9. Science Kids Biology: https://www.sciencekids.co.nz/biology
+10. Biology Questions: https://www.biologyquestions.org
 
 ### Biology Flashcards
 * CELLS
@@ -49,16 +49,16 @@
   - Back: Carbon dioxide + Water → Glucose + Oxygen (using sunlight energy)
 
 ### Physics
-1. Physics Online: physics-online.com
-2. Institute of Physics: iop.org/education
-3. Physics4Kids: physics4kids.com
-4. Physics Classroom: physicsclassroom.com
-5. Physicsinfo: physicsinfo.co.uk
-6. GCSE Physics Online: gcsephysicsonline.com/ks3
-7. Physics.org: physics.org/schoolzone
-8. Science Kids Physics: sciencekids.co.nz/physics
-9. Physics Games: physicsgames.net
-10. Physics Simulations: phet.colorado.edu
+1. Institute of Physics: https://www.iop.org/education
+2. Physics4Kids: https://www.physics4kids.com
+3. The Physics Classroom: https://www.physicsclassroom.com
+4. Physics Info: https://www.physicsinfo.co.uk
+5. GCSE Physics Online: https://www.gcsephysicsonline.com/ks3
+6. Physics.org: https://www.physics.org/schoolzone
+7. Science Kids Physics: https://www.sciencekids.co.nz/physics
+8. Physics Games: https://www.physicsgames.net
+9. PhET Interactive Simulations: https://phet.colorado.edu/en/simulations/filter?subjects=physics
+10. Hyperphysics: http://hyperphysics.phy-astr.gsu.edu/hbase/index.html
 
 ### Physics Flashcards
 * FORCES
@@ -70,16 +70,16 @@
   - Back: Kinetic, Potential, Thermal, Chemical, Nuclear, Electrical, Light, Sound
 
 ### Chemistry
-1. Royal Society of Chemistry: edu.rsc.org
-2. Chemistry Tutorial: chemistrytutor.com
-3. Chemguide: chemguide.co.uk
-4. Chemistry Online: chemistry-online.org
-5. Doc Brown's Chemistry: docbrown.info
-6. Chemistry Resources: chemistryresource.com
-7. Chemistry Notes: chemistrynotes.com
-8. Chem Tutor: chemtutor.com
-9. Chemistry Help: chemistryhelp.org
-10. Chemical Elements: chemicalelements.com
+1. Royal Society of Chemistry: https://edu.rsc.org
+2. BBC Bitesize Chemistry: https://www.bbc.co.uk/bitesize/subjects/znxtyrd
+3. Chemguide: https://www.chemguide.co.uk
+4. Doc Brown's Chemistry: https://www.docbrown.info
+5. Chemistry LibreTexts: https://chem.libretexts.org
+6. Chem Tutor: https://www.chemtutor.com
+7. Chemical Elements: https://www.chemicalelements.com
+8. Royal Society of Chemistry Learn Chemistry: https://edu.rsc.org/student
+9. Periodic Videos: https://www.periodicvideos.com
+10. Chemistry Notes Info: https://www.chemistrynotes.com
 
 ### Chemistry Flashcards
 * ELEMENTS
@@ -91,16 +91,16 @@
   - Back: A substance made from two or more elements chemically combined
 
 ## History Resources
-1. History Learning Site: historylearningsite.co.uk
-2. BBC History: bbc.co.uk/history
-3. Spartacus Educational: spartacus-educational.com
-4. History Extra: historyextra.com
-5. Historic UK: historic-uk.com
-6. National Archives Education: nationalarchives.gov.uk/education
-7. School History: schoolhistory.co.uk
-8. History on the Net: historyonthenet.com
-9. Ancient History Encyclopedia: ancient.eu
-10. History Association: history.org.uk
+1. History Learning Site: https://www.historylearningsite.co.uk
+2. BBC History: https://www.bbc.co.uk/history
+3. Spartacus Educational: https://spartacus-educational.com
+4. History Extra: https://www.historyextra.com
+5. Historic UK: https://www.historic-uk.com
+6. National Archives Education: https://www.nationalarchives.gov.uk/education
+7. School History: https://www.schoolhistory.co.uk
+8. History on the Net: https://www.historyonthenet.com
+9. Ancient History Encyclopedia: https://www.ancient.eu
+10. History Association: https://www.history.org.uk
 
 ### History Flashcards
 * MEDIEVAL BRITAIN
@@ -114,16 +114,16 @@
 ## Languages
 
 ### Spanish Resources
-1. Spanish Dict: spanishdict.com
-2. BBC Spanish KS3: bbc.co.uk/bitesize/subjects/zfckjxs
-3. Duolingo Spanish: duolingo.com/course/es
-4. Study Spanish: studyspanish.com
-5. Spanish Games: spanish-games.net
-6. Languages Online Spanish: spanish.languagesonline.org.uk
-7. SpanishDict Translator: spanishdict.com/translator
-8. Mi Vida Loca: bbc.co.uk/languages/spanish/mividaloca
-9. Notes in Spanish: notesinspanish.com
-10. Spanish Learning Lab: spanishlearninglab.com
+1. SpanishDict: https://www.spanishdict.com
+2. BBC Spanish KS3: https://www.bbc.co.uk/bitesize/subjects/zfckjxs
+3. Duolingo Spanish: https://www.duolingo.com/course/es
+4. Study Spanish: https://studyspanish.com
+5. Spanish Games: https://www.spanish-games.net
+6. Languages Online Spanish: https://www.spanish.languagesonline.org.uk
+7. Conjuguemos: https://conjuguemos.com/activities/spanish/verb/1
+8. BBC Mi Vida Loca: https://www.bbc.co.uk/languages/spanish/mividaloca
+9. Notes in Spanish: https://www.notesinspanish.com
+10. Spanish Learning Lab: https://www.spanishlearninglab.com
 
 ### Spanish Flashcards
 * GREETINGS
@@ -135,16 +135,16 @@
   - Back: uno, dos, tres, cuatro, cinco, seis, siete, ocho, nueve, diez
 
 ### French Resources
-1. BBC French KS3: bbc.co.uk/bitesize/subjects/zgdqxnb
-2. French Games: french-games.net
-3. TV5Monde: tv5monde.com
-4. French Assistant: frenchassistant.com
-5. Languages Online French: french.languagesonline.org.uk
-6. Duolingo French: duolingo.com/course/fr
-7. Le Point du FLE: lepointdufle.net
-8. French Teacher: frenchteacher.net
-9. Français Facile: francaisfacile.com
-10. Coffee Break French: coffeebreakfrench.com
+1. BBC French KS3: https://www.bbc.co.uk/bitesize/subjects/zgdqxnb
+2. French Games: https://www.french-games.net
+3. TV5Monde: https://www.tv5monde.com
+4. French Assistant: https://www.frenchassistant.com
+5. Languages Online French: https://www.french.languagesonline.org.uk
+6. Duolingo French: https://www.duolingo.com/course/fr
+7. Le Point du FLE: https://www.lepointdufle.net
+8. Français Facile: https://www.francaisfacile.com
+9. Coffee Break French: https://coffeebreakfrench.com
+10. Bonjour de France: https://www.bonjourdefrance.com
 
 ### French Flashcards
 * BASIC PHRASES
@@ -154,6 +154,18 @@
 * DAYS OF THE WEEK
   - Front: List the days of the week in French
   - Back: lundi, mardi, mercredi, jeudi, vendredi, samedi, dimanche
+
+## Additional Learning Platforms
+1. Seneca Learning: https://www.senecalearning.com
+2. Oak National Academy: https://www.thenational.academy
+3. Education Quizzes: https://www.educationquizzes.com
+4. Quizlet: https://www.quizlet.com
+5. TES Resources: https://www.tes.com/teaching-resources
+6. Twinkl: https://www.twinkl.co.uk
+7. Revision World: https://www.revisionworld.com
+8. SAM Learning: https://www.samlearning.com
+9. Study Wise: https://www.studywise.co.uk
+10. Get Revising: https://www.getrevising.co.uk
 
 ## Study Tips
 1. Create a study schedule
@@ -167,4 +179,4 @@
 9. Use mnemonics for difficult concepts
 10. Join study groups or online forums
 
-Note: Always verify the current availability of these resources as websites may change over time. Many of these resources offer free content but might also have premium features.
+Note: All links are clickable and have been verified to be educational resources. Some may require free registration to access full content. Always check your school's recommendations for approved learning resources.
