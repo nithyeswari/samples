@@ -1,271 +1,294 @@
-# Product Monorepo and Order MFE
+# Enterprise MFE Architecture with Product Monorepo
 
-This project consists of two separate repositories that work together:
-1. Product Management Monorepo - Core product functionality
-2. Order MFE - Order management application consuming product modules
+## Overview
 
-## Product Management Monorepo
+This project implements a micro-frontend architecture with two main parts:
+1. Product Management Monorepo - Core reusable modules
+2. Order Management MFE - Shell application with state management
 
-Repository containing reusable product management modules.
+## Repository Structure
 
-### Structure
 ```
-product-monorepo/
-├── packages/
-│   ├── core/
-│   │   └── src/
-│   │       └── types/
-│   │           └── BaseModel.ts
-│   └── product/
-│       ├── src/
-│       │   ├── models/
-│       │   │   └── Product.ts
-│       │   ├── services/
-│       │   │   └── ProductService.ts
-│       │   └── components/
-│       │       └── ProductForm.tsx
-│       ├── webpack.config.js
-│       └── package.json
-└── package.json
+├── product-monorepo/            # Repository 1: Product Management
+│   ├── packages/
+│   │   ├── core/
+│   │   │   └── src/
+│   │   │       └── types/
+│   │   └── product/
+│   │       ├── src/
+│   │       │   ├── models/
+│   │       │   ├── services/
+│   │       │   └── components/
+│   │       └── webpack.config.js
+│   └── package.json
+│
+└── order-mfe/                   # Repository 2: Order Management
+    ├── src/
+    │   ├── shell/              # Shell Architecture
+    │   │   ├── components/
+    │   │   └── layouts/
+    │   ├── state/              # Global State
+    │   │   └── store.ts
+    │   ├── pages/              # Route Pages
+    │   └── App.tsx
+    └── package.json
 ```
 
-### Setup & Installation
+## Quick Start
+
+### 1. Start Product Monorepo
 ```bash
-# Clone repository
-git clone git@github.com:your-org/product-monorepo.git
-
-# Install dependencies
+cd product-monorepo
 npm install
-
-# Start development
-npm run dev
-
-# Build for production
-npm run build
+npm run dev    # Runs on http://localhost:3001
 ```
 
-### Exposed Modules
-The monorepo exposes the following modules via Module Federation:
-```javascript
-// Product types and interfaces
-'./types': './src/types/index'
-
-// Product services
-'./services': './src/services/ProductService'
-
-// React components
-'./components': './src/components/index'
+### 2. Start Order MFE
+```bash
+cd order-mfe
+npm install
+npm start     # Runs on http://localhost:3000
 ```
 
-### Configuration
+## Product Monorepo
+
+### Core Features
+- Reusable product components
+- Shared services and utilities
+- Type definitions
+- Module Federation setup
+
+### Module Federation Configuration
 ```javascript
-// webpack.config.js
-module.exports = {
+// product-monorepo/packages/product/webpack.config.js
+{
   plugins: [
     new ModuleFederationPlugin({
       name: 'product_management',
       filename: 'remoteEntry.js',
       exposes: {
         './ProductService': './src/services/ProductService',
-        './ProductForm': './src/components/ProductForm'
+        './ProductForm': './src/components/ProductForm',
+        './types': './src/types/index'
       }
     })
   ]
 }
 ```
 
-## Order Management MFE
+## Order MFE Shell
 
-Single-page application that consumes product modules from the monorepo.
+### Shell Architecture
+- Header with navigation
+- Sidebar for main menu
+- MainLayout wrapper
+- Error boundaries
+- Loading states
 
-### Structure
-```
-order-mfe/
-├── src/
-│   ├── pages/
-│   │   ├── OrderList.tsx
-│   │   └── CreateOrder.tsx
-│   ├── components/
-│   │   └── OrderForm.tsx
-│   └── services/
-│       └── OrderService.ts
-├── webpack.config.js
-└── package.json
-```
-
-### Setup & Installation
-```bash
-# Clone repository
-git clone git@github.com:your-org/order-mfe.git
-
-# Install dependencies
-npm install
-
-# Start development
-npm start
-```
-
-### Configuration
-```javascript
-// webpack.config.js
-module.exports = {
-  plugins: [
-    new ModuleFederationPlugin({
-      name: 'order_app',
-      remotes: {
-        productModule: 'product_management@http://product-server.com/remoteEntry.js'
-      }
-    })
-  ]
-}
-```
-
-### Using Remote Modules
+### State Management (Zustand)
 ```typescript
-// Import product components
+// order-mfe/src/state/store.ts
+const useOrderStore = create((set) => ({
+  cart: {
+    items: [],
+    total: 0
+  },
+  loading: false,
+  error: null,
+  
+  addToCart: (product, quantity) => set(state => ({
+    cart: {
+      items: [...state.cart.items, { product, quantity }],
+      total: calculateTotal(state.cart.items)
+    }
+  })),
+  
+  // Other actions...
+}));
+```
+
+### Remote Module Integration
+```typescript
+// order-mfe/src/pages/CreateOrder.tsx
 const ProductSelector = React.lazy(() => import('productModule/ProductSelector'));
 
-// Import product services
-const { ProductService } = await import('productModule/services');
-
-// Use in components
 const CreateOrder = () => {
+  const { addToCart } = useOrderStore();
+  
   return (
     <Suspense fallback="Loading...">
-      <ProductSelector onSelect={handleProductSelect} />
+      <ProductSelector onSelect={addToCart} />
     </Suspense>
   );
 };
 ```
 
-## Development Process
+## Development Guidelines
 
-### 1. Start Product Monorepo
+### 1. Product Module Development
+```typescript
+// Adding new product feature
+// product-monorepo/packages/product/src/components/NewFeature.tsx
+export const NewFeature = () => {
+  // Implementation
+};
+
+// Expose in webpack.config.js
+{
+  exposes: {
+    './NewFeature': './src/components/NewFeature'
+  }
+}
+```
+
+### 2. Order MFE Development
+```typescript
+// Using product feature in Order MFE
+const NewFeature = React.lazy(() => import('productModule/NewFeature'));
+
+// Add to routes
+<Route path="/new-feature" element={<NewFeature />} />
+```
+
+### 3. State Management
+```typescript
+// Using store in components
+const Component = () => {
+  const { cart, addToCart } = useOrderStore();
+  
+  return (
+    <div>
+      Cart Items: {cart.items.length}
+      <button onClick={() => addToCart(product, 1)}>Add</button>
+    </div>
+  );
+};
+```
+
+## Deployment
+
+### 1. Product Monorepo Deployment
 ```bash
+# Build modules
 cd product-monorepo
-npm run dev
-# Serves at http://localhost:3001
+npm run build
+
+# Docker deployment
+docker build -t product-monorepo .
+docker run -p 3001:80 product-monorepo
 ```
 
-### 2. Start Order MFE
+### 2. Order MFE Deployment
 ```bash
+# Build application
 cd order-mfe
-npm start
-# Serves at http://localhost:3000
+npm run build
+
+# Docker deployment
+docker build -t order-mfe .
+docker run -p 3000:80 order-mfe
 ```
 
-### Environment Variables
+## Configuration
 
-Product Monorepo:
+### Product Monorepo
 ```env
 PORT=3001
 API_URL=http://api.example.com
 ```
 
-Order MFE:
+### Order MFE
 ```env
 PORT=3000
 PRODUCT_MODULE_URL=http://localhost:3001
 API_URL=http://api.example.com
 ```
 
-## Deployment
+## Best Practices
 
-### Product Monorepo
-```bash
-# Build
-cd product-monorepo
-npm run build
+### 1. Module Federation
+- Keep remotes granular
+- Version exposed modules
+- Handle loading states
+- Implement error boundaries
 
-# Docker build
-docker build -t product-monorepo .
-docker run -p 3001:80 product-monorepo
-```
+### 2. State Management
+- Keep state normalized
+- Use selectors for derived data
+- Handle async operations cleanly
+- Implement proper error handling
 
-### Order MFE
-```bash
-# Build
-cd order-mfe
-npm run build
+### 3. Shell Architecture
+- Maintain consistent layouts
+- Implement proper navigation
+- Handle loading states globally
+- Manage errors at appropriate levels
 
-# Docker build
-docker build -t order-mfe .
-docker run -p 3000:80 order-mfe
-```
+## Error Handling
 
-## Troubleshooting
-
-### Common Issues
-
-1. Remote Module Loading
-- Check if Product Monorepo is running
-- Verify PRODUCT_MODULE_URL is correct
-- Check browser console for CORS issues
-
-2. Type Errors
-- Ensure types are properly exported from monorepo
-- Check version compatibility
-
-### Debug Steps
-
-1. Verify Product Monorepo Accessibility:
-```bash
-curl http://product-server.com/remoteEntry.js
-```
-
-2. Check Module Federation Setup:
-```javascript
-// In browser console
-window.productModule
-```
-
-## API Integration
-
-### Product Service
+### 1. Remote Module Errors
 ```typescript
-const productService = new ProductService('http://api.example.com');
-
-// Create product
-await productService.create({
-  name: 'Product 1',
-  price: 99.99
-});
-
-// List products
-const products = await productService.list();
+<ErrorBoundary>
+  <Suspense fallback="Loading...">
+    <RemoteComponent />
+  </Suspense>
+</ErrorBoundary>
 ```
 
-### Order Service
+### 2. State Errors
 ```typescript
-const orderService = new OrderService('http://api.example.com');
+try {
+  await someOperation();
+} catch (error) {
+  useOrderStore.getState().setError(error.message);
+}
+```
 
-// Create order with products
-await orderService.create({
-  products: selectedProducts,
-  total: 299.97
+## Testing
+
+### 1. Product Module Tests
+```typescript
+// product-monorepo/packages/product/src/__tests__/ProductService.test.ts
+describe('ProductService', () => {
+  test('creates product', async () => {
+    // Test implementation
+  });
 });
 ```
 
-## Contributing
+### 2. Order MFE Tests
+```typescript
+// order-mfe/src/__tests__/store.test.ts
+describe('OrderStore', () => {
+  test('adds to cart', () => {
+    // Test implementation
+  });
+});
+```
 
-### Product Monorepo
-1. Create feature branch
-2. Make changes
-3. Run tests: `npm test`
-4. Build: `npm run build`
-5. Submit PR
+## Monitoring & Performance
 
-### Order MFE
-1. Create feature branch
-2. Make changes
-3. Test with Product Monorepo
-4. Submit PR
+### 1. Module Loading
+- Track remote module load times
+- Monitor chunk sizes
+- Implement retry mechanisms
 
-## Support
+### 2. State Performance
+- Monitor store updates
+- Track component re-renders
+- Implement performance tracking
 
-- Documentation: `/docs`
-- Issues: GitHub Issues
-- Slack: #product-order-support
+## Support & Maintenance
+
+### Documentation
+- API Documentation: `/docs/api`
+- Component Library: `/docs/components`
+- State Management: `/docs/state`
+
+### Support Channels
+- GitHub Issues
+- Slack: #mfe-support
+- Email: support@example.com
 
 ## License
 
