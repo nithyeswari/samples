@@ -149,13 +149,4 @@ This repository contains resources and implementation patterns for computer visi
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
-
-## Contact
-For questions and support, please contact the maintainers:
-- Email: maintainers@example.com
-- Slack: #computer-vision-finance
-- Discord: Computer Vision Finance Community
-
-## Acknowledgments
-Special thanks to the open-source community and financial institutions that have contributed to the development of computer vision applications in finance.
+This project is licensed under the MIT License
