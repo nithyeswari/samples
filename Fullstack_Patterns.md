@@ -245,17 +245,3 @@ graph TD
 - [High Scalability](http://highscalability.com/)
 - [Architecture Weekly Newsletter](https://github.com/oskardudycz/ArchitectureWeekly)
 
----
-
-## Updates
-Last Updated: February 2025
-
-## License
-MIT License
-
-## Contributing
-Submit issues and pull requests to improve this guide.
-
----
-
-Note: Links and resources are regularly updated. Check official documentation for the latest information.
