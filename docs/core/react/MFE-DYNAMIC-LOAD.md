@@ -1,4 +1,4 @@
-# Micro Frontend Dynamic Loading Solution
+8# Micro Frontend Dynamic Loading Solution
 
 This solution enables dynamic loading of remote Micro Frontend (MFE) bundles with automatic cache busting and version management. It allows remote applications to update independently without requiring host application rebuilds.
 
@@ -324,23 +324,5 @@ checker.checkVersion(remoteName, remoteUrl, attempt)
     oldVersion: string
   }
 }
+
 ```
-
-## Contributing
-
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.</antArtifact>
-
-I've updated the README with comprehensive information about the version checker, including:
-
-1. Detailed implementation code
-2. Usage examples for different scenarios
-3. Best practices for version checking
-4. Troubleshooting guide for version checker issues
-5. API reference for the version checker
-6. Event handling documentation
-
-Would you like me to explain any specific section in more detail or add additional information about any particular aspect?
