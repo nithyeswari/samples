@@ -9,6 +9,7 @@ This solution enables dynamic loading of remote Micro Frontend (MFE) bundles wit
 - Version tracking through manifest files
 - No host rebuilds required for remote updates
 - Built-in error handling and retry mechanisms
+- Real-time version checking and update notifications
 
 ## Architecture
 
@@ -25,8 +26,11 @@ This solution enables dynamic loading of remote Micro Frontend (MFE) bundles wit
    - Handles version checking and updates
 
 3. **Version Checker**
-   - Optional component for monitoring remote updates
+   - Monitors remote updates in real-time
    - Provides update notifications or auto-reload functionality
+   - Supports multiple remotes with individual configurations
+   - Includes retry mechanism and error handling
+   - Customizable update handlers
 
 ## Setup Instructions
 
@@ -90,31 +94,114 @@ module.exports = {
 };
 ```
 
-## Usage
+## Version Checker Implementation
 
-### Loading Remote Components
+### Basic Setup
 
 ```javascript
-// App.js
-import React, { lazy, Suspense } from 'react';
+class RemoteVersionChecker {
+  constructor(options = {}) {
+    this.versions = new Map();
+    this.checkInterval = options.checkInterval || 60000;
+    this.onVersionChange = options.onVersionChange || this.defaultVersionHandler;
+    this.checkTimers = new Map();
+    this.retryAttempts = options.retryAttempts || 3;
+    this.retryDelay = options.retryDelay || 5000;
+  }
 
-const RemoteComponent = lazy(() => import('remote_app/RemoteComponent'));
+  startChecking(remoteName, remoteUrl) {
+    this.checkVersion(remoteName, remoteUrl);
+    const timerId = setInterval(() => {
+      this.checkVersion(remoteName, remoteUrl);
+    }, this.checkInterval);
+    this.checkTimers.set(remoteName, timerId);
+  }
 
-function App() {
-  return (
-    <Suspense fallback="Loading...">
-      <RemoteComponent />
-    </Suspense>
-  );
+  stopChecking(remoteName) {
+    const timerId = this.checkTimers.get(remoteName);
+    if (timerId) {
+      clearInterval(timerId);
+      this.checkTimers.delete(remoteName);
+    }
+  }
 }
 ```
 
-### Version Checking
+### Version Checking Logic
 
 ```javascript
-// versionCheck.js
+async checkVersion(remoteName, remoteUrl, attempt = 1) {
+  try {
+    const response = await fetch(`${remoteUrl}/manifest.json`, {
+      cache: 'no-cache'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const manifest = await response.json();
+    const currentVersion = this.versions.get(remoteName);
+    
+    if (currentVersion && currentVersion !== manifest.version) {
+      this.handleVersionChange(remoteName, manifest.version, currentVersion);
+    }
+    
+    this.versions.set(remoteName, manifest.version);
+    
+  } catch (error) {
+    if (attempt < this.retryAttempts) {
+      setTimeout(() => {
+        this.checkVersion(remoteName, remoteUrl, attempt + 1);
+      }, this.retryDelay);
+    }
+  }
+}
+```
+
+### Usage Examples
+
+1. **Basic Usage**
+```javascript
 const checker = new RemoteVersionChecker();
 checker.startChecking('remote_app', 'http://remote-app.example.com');
+```
+
+2. **Custom Configuration**
+```javascript
+const checker = new RemoteVersionChecker({
+  checkInterval: 30000,
+  retryAttempts: 5,
+  retryDelay: 3000,
+  onVersionChange: (remoteName, newVersion, oldVersion) => {
+    notifyUser(`New version available for ${remoteName}`);
+  }
+});
+```
+
+3. **Event Listeners**
+```javascript
+window.addEventListener('remoteVersionChange', (event) => {
+  const { remoteName, newVersion, oldVersion } = event.detail;
+  showUpdateBanner({
+    message: `New version available (${newVersion})`,
+    action: () => window.location.reload()
+  });
+});
+```
+
+4. **Multiple Remotes**
+```javascript
+const remotes = {
+  'remote_app1': 'http://remote1.example.com',
+  'remote_app2': 'http://remote2.example.com'
+};
+
+const checker = new RemoteVersionChecker();
+
+Object.entries(remotes).forEach(([name, url]) => {
+  checker.startChecking(name, url);
+});
 ```
 
 ## Deployment Considerations
@@ -136,28 +223,39 @@ checker.startChecking('remote_app', 'http://remote-app.example.com');
    - Implement retry mechanisms for manifest fetching
    - Provide fallback UI for loading failures
    - Monitor remote loading performance
+   - Set up alerting for repeated version check failures
 
 3. **Version Management**
    - Implement gradual rollout strategies
    - Consider using feature flags for new versions
    - Plan for backward compatibility
+   - Maintain version history for rollback capabilities
 
 ## Best Practices
 
-1. **Shared Dependencies**
+1. **Version Checking**
+   - Choose appropriate check intervals based on update frequency
+   - Implement exponential backoff for retry attempts
+   - Consider user experience when handling updates
+   - Provide clear update notifications to users
+
+2. **Shared Dependencies**
    - Use singleton mode for critical shared dependencies
    - Keep shared dependency versions in sync
    - Monitor bundle sizes
+   - Implement dependency version validation
 
-2. **Performance**
+3. **Performance**
    - Implement lazy loading for remote components
    - Use code splitting effectively
    - Monitor and optimize bundle sizes
+   - Cache manifest responses appropriately
 
-3. **Monitoring**
+4. **Monitoring**
    - Track remote loading success rates
    - Monitor version mismatches
    - Set up alerts for loading failures
+   - Log version check results and update events
 
 ## Troubleshooting
 
@@ -167,16 +265,25 @@ checker.startChecking('remote_app', 'http://remote-app.example.com');
    - Check network connectivity
    - Verify manifest.json accessibility
    - Check for CORS issues
+   - Validate manifest format and content
 
 2. **Version Mismatches**
    - Verify shared dependency versions
    - Check manifest generation
    - Review version checking implementation
+   - Validate version comparison logic
 
 3. **Caching Issues**
    - Verify cache headers
    - Check browser cache settings
    - Review CDN configuration
+   - Test manifest update propagation
+
+4. **Version Checker Issues**
+   - Check interval timing configuration
+   - Verify retry mechanism functionality
+   - Validate event handling
+   - Monitor memory usage for multiple checkers
 
 ## API Reference
 
@@ -194,8 +301,29 @@ new ManifestGeneratorPlugin({
 ```javascript
 const checker = new RemoteVersionChecker({
   checkInterval: 60000,  // Optional, defaults to 60 seconds
-  onVersionChange: (remoteName, version) => {}  // Optional callback
+  retryAttempts: 3,     // Optional, defaults to 3
+  retryDelay: 5000,     // Optional, defaults to 5 seconds
+  onVersionChange: (remoteName, newVersion, oldVersion) => {}  // Optional callback
 })
+
+// Available methods
+checker.startChecking(remoteName, remoteUrl)
+checker.stopChecking(remoteName)
+checker.checkVersion(remoteName, remoteUrl, attempt)
+```
+
+### Events
+
+```javascript
+// Version change event
+{
+  type: 'remoteVersionChange',
+  detail: {
+    remoteName: string,
+    newVersion: string,
+    oldVersion: string
+  }
+}
 ```
 
 ## Contributing
@@ -204,4 +332,15 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.</antArtifact>
+
+I've updated the README with comprehensive information about the version checker, including:
+
+1. Detailed implementation code
+2. Usage examples for different scenarios
+3. Best practices for version checking
+4. Troubleshooting guide for version checker issues
+5. API reference for the version checker
+6. Event handling documentation
+
+Would you like me to explain any specific section in more detail or add additional information about any particular aspect?
