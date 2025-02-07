@@ -99,11 +99,6 @@
 
 ## Learning Resources
 
-### Online Courses
-- [Frontend Masters](https://frontendmasters.com)
-- [Egghead.io](https://egghead.io)
-- [React Training](https://reacttraining.com)
-- [Node.js Courses](https://nodejs.dev/learn)
 
 ### Best Practices
 - [Clean Code JavaScript](https://github.com/ryanmcdermott/clean-code-javascript)
