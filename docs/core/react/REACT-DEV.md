@@ -131,12 +131,6 @@
 - [Datadog](https://docs.datadoghq.com)
 - [Grafana](https://grafana.com/docs)
 
-## Team Collaboration
-
-### Documentation Platforms
-- [Confluence](https://www.atlassian.com/software/confluence)
-- [Notion Templates](https://www.notion.so/templates)
-- [GitBook](https://docs.gitbook.com)
 
 ### Project Management
 - [Jira Software](https://www.atlassian.com/software/jira)
