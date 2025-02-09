@@ -135,12 +135,3 @@
 - React Performance: https://react.dev/learn/render-and-commit
 - Bundle Size Analyzer: https://bundlephobia.com/
 
-[Previous sections remain the same...]
-
-## Contributing
-Feel free to submit issues and enhancement requests!
-
-## License
-This roadmap is MIT licensed. Feel free to use it for personal or commercial projects.
-
-Note: Keep checking these resources regularly as documentation and tools are frequently updated. Always refer to the official documentation for the most up-to-date information.
