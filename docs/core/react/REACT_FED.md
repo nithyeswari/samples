@@ -9,9 +9,7 @@
 - MongoDB: https://www.mongodb.com/docs/
 - PostgreSQL: https://www.postgresql.org/docs/
 
-## Learning Platforms
-- Frontend Masters: https://frontendmasters.com
-- Egghead.io: https://egghead.io
+## Learning 
 - TypeScript Course: https://www.totaltypescript.com/
 - Node.js Best Practices: https://github.com/goldbergyoni/nodebestpractices
 
