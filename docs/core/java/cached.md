@@ -1,4 +1,4 @@
-# Smart Cache System - Complete Code Documentation
+# Smart Cache System 
 
 ## Table of Contents
 1. Configuration
