@@ -1,188 +1,222 @@
-8# Smart Cache System 
+# Smart Cache System - Complete Implementation Guide
+
+A high-performance caching solution using Caffeine with time-based refresh capabilities.
 
 ## Table of Contents
-1. Configuration
-2. Core Cache Components
-3. Service Layer
-4. Controllers
-5. Monitoring
-6. Utilities
+1. [Build Configuration](#build-configuration)
+2. [Core Components](#core-components)
+3. [Cache Configuration](#cache-configuration)
+4. [Services](#services)
+5. [Controllers](#controllers)
+6. [Usage Examples](#usage-examples)
 
-## 1. Configuration
+## Build Configuration
 
-### CacheConfig.java
+### build.gradle
+```groovy
+plugins {
+    id 'org.springframework.boot' version '3.2.2'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'java'
+}
+
+group = 'com.example'
+version = '1.0.0'
+sourceCompatibility = '17'
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
+    implementation 'io.micrometer:micrometer-registry-prometheus:1.12.2'
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+}
+```
+
+### application.properties
+```properties
+# Cache Configuration
+cache.maximum.size=10000
+cache.refresh.times.key1=14:30,18:45
+cache.refresh.times.key2=09:00,13:00,17:00
+
+# API Configuration
+api.base-url=http://your-api-url
+
+# Actuator
+management.endpoints.web.exposure.include=prometheus,health,info
+management.metrics.export.prometheus.enabled=true
+```
+
+## Core Components
+
+### CaffeineConfig.java
 ```java
 @Configuration
 @EnableCaching
+@Slf4j
 @RequiredArgsConstructor
-public class CacheConfig extends CachingConfigurerSupport {
+public class CaffeineConfig {
     
-    @Value("${cache.default-expiration:30}")
-    private int defaultExpirationInMinutes;
-    
-    @Value("${cache.maximum-size:10000}")
-    private int maximumSize;
+    @Value("${cache.maximum.size:10000}")
+    private long maximumSize;
     
     @Bean
-    public CacheManager cacheManager() {
+    public CacheManager cacheManager(CacheRefreshScheduler refreshScheduler) {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         cacheManager.setCaffeine(caffeineCacheBuilder());
         return cacheManager;
     }
     
-    @Bean
-    public Caffeine<Object, Object> caffeineCacheBuilder() {
+    private Caffeine<Object, Object> caffeineCacheBuilder() {
         return Caffeine.newBuilder()
             .maximumSize(maximumSize)
-            .expireAfterWrite(Duration.ofMinutes(defaultExpirationInMinutes))
             .recordStats();
     }
     
     @Bean
-    public AsyncLoadingCache<String, JsonNode> asyncCache(RestTemplate restTemplate) {
-        return Caffeine.newBuilder()
-            .maximumSize(maximumSize)
-            .expireAfterWrite(Duration.ofMinutes(defaultExpirationInMinutes))
-            .recordStats()
-            .buildAsync(new CacheLoader<String, JsonNode>() {
-                @Override
-                public JsonNode load(String key) {
-                    return loadData(key, restTemplate);
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper;
+    }
+    
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplateBuilder()
+            .setConnectTimeout(Duration.ofSeconds(5))
+            .setReadTimeout(Duration.ofSeconds(5))
+            .build();
+    }
+}
+```
+
+### CacheRefreshScheduler.java
+```java
+@Component
+@Slf4j
+@RequiredArgsConstructor
+public class CacheRefreshScheduler {
+    private final AsyncLoadingCache<String, JsonNode> cache;
+    private final ScheduledExecutorService scheduler;
+    private final Map<String, RefreshConfig> refreshConfigs;
+    private final Map<String, ScheduledFuture<?>> scheduledTasks;
+    
+    public CacheRefreshScheduler() {
+        this.scheduler = Executors.newScheduledThreadPool(
+            Runtime.getRuntime().availableProcessors()
+        );
+        this.refreshConfigs = new ConcurrentHashMap<>();
+        this.scheduledTasks = new ConcurrentHashMap<>();
+    }
+    
+    public void setRefreshTime(String key, LocalTime refreshTime) {
+        RefreshConfig config = new RefreshConfig(refreshTime);
+        refreshConfigs.put(key, config);
+        scheduleRefresh(key, config);
+    }
+    
+    public void setMultipleRefreshTimes(String key, List<LocalTime> refreshTimes) {
+        RefreshConfig config = new RefreshConfig(refreshTimes);
+        refreshConfigs.put(key, config);
+        scheduleRefresh(key, config);
+    }
+    
+    private void scheduleRefresh(String key, RefreshConfig config) {
+        // Cancel existing schedule if any
+        cancelExistingSchedule(key);
+        
+        // Schedule all refresh times for today
+        for (LocalTime refreshTime : config.getRefreshTimes()) {
+            LocalDateTime nextRefresh = getNextRefreshTime(refreshTime);
+            scheduleRefreshTask(key, nextRefresh);
+        }
+    }
+    
+    private void scheduleRefreshTask(String key, LocalDateTime refreshTime) {
+        long delay = Duration.between(LocalDateTime.now(), refreshTime).getSeconds();
+        
+        if (delay > 0) {
+            ScheduledFuture<?> task = scheduler.schedule(
+                () -> refreshCache(key),
+                delay,
+                TimeUnit.SECONDS
+            );
+            
+            scheduledTasks.put(key + "_" + refreshTime, task);
+        }
+    }
+    
+    @PreDestroy
+    public void shutdown() {
+        scheduledTasks.values().forEach(task -> task.cancel(false));
+        scheduler.shutdown();
+    }
+}
+```
+
+### CacheAsyncLoader.java
+```java
+@Component
+@Slf4j
+@RequiredArgsConstructor
+public class CacheAsyncLoader implements AsyncCacheLoader<String, JsonNode> {
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+    
+    @Value("${api.base-url}")
+    private String baseUrl;
+    
+    @Override
+    public CompletableFuture<JsonNode> asyncLoad(String key, Executor executor) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                log.info("Loading data for key: {}", key);
+                String url = String.format("%s/data/%s", baseUrl, key);
+                String response = restTemplate.getForObject(url, String.class);
+                return objectMapper.readTree(response);
+            } catch (Exception e) {
+                log.error("Error loading data for key {}: {}", key, e.getMessage());
+                throw new CacheLoadingException("Failed to load data", e);
+            }
+        }, executor);
+    }
+    
+    @Override
+    public CompletableFuture<JsonNode> asyncReload(String key, JsonNode oldValue, 
+            Executor executor) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String url = String.format("%s/data/%s", baseUrl, key);
+                
+                HttpHeaders headers = new HttpHeaders();
+                String etag = calculateEtag(oldValue);
+                headers.setIfNoneMatch(etag);
+                
+                ResponseEntity<String> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    String.class
+                );
+                
+                if (response.getStatusCode() == HttpStatus.NOT_MODIFIED) {
+                    return oldValue;
                 }
                 
-                @Override
-                public Map<String, JsonNode> loadAll(Set<? extends String> keys) {
-                    return keys.stream()
-                        .parallel()
-                        .collect(Collectors.toMap(
-                            key -> key,
-                            key -> loadData(key, restTemplate)
-                        ));
-                }
-            });
-    }
-    
-    private JsonNode loadData(String key, RestTemplate restTemplate) {
-        try {
-            String response = restTemplate.getForObject(
-                "/api/data/" + key,
-                String.class
-            );
-            return new ObjectMapper().readTree(response);
-        } catch (Exception e) {
-            throw new CacheLoadingException("Failed to load data for key: " + key, e);
-        }
-    }
-}
-```
-
-## 2. Core Cache Components
-
-### CustomCache.java
-```java
-@Slf4j
-public class CustomCache implements Cache {
-    private final String name;
-    private final Duration ttl;
-    private final ConcurrentMap<Object, CacheEntry> store;
-    private final ScheduledExecutorService scheduler;
-    private final List<CacheEventListener> eventListeners;
-    
-    public CustomCache(String name, Duration ttl) {
-        this.name = name;
-        this.ttl = ttl;
-        this.store = new ConcurrentHashMap<>();
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
-        this.eventListeners = new CopyOnWriteArrayList<>();
-        
-        scheduler.scheduleAtFixedRate(
-            this::cleanupExpiredEntries,
-            ttl.getSeconds(),
-            ttl.getSeconds(),
-            TimeUnit.SECONDS
-        );
-    }
-    
-    @Override
-    public ValueWrapper get(Object key) {
-        CacheEntry entry = store.get(key);
-        if (entry != null && !entry.isExpired()) {
-            notifyListeners(CacheEventType.HIT, key);
-            return new SimpleValueWrapper(entry.getValue());
-        }
-        
-        if (entry != null && entry.isExpired()) {
-            store.remove(key);
-            notifyListeners(CacheEventType.EXPIRED, key);
-        }
-        
-        notifyListeners(CacheEventType.MISS, key);
-        return null;
-    }
-    
-    @Override
-    public void put(Object key, Object value) {
-        store.put(key, new CacheEntry(value, ttl));
-        notifyListeners(CacheEventType.PUT, key);
-    }
-    
-    public void addListener(CacheEventListener listener) {
-        eventListeners.add(listener);
-    }
-    
-    private void notifyListeners(CacheEventType type, Object key) {
-        eventListeners.forEach(listener -> {
-            try {
-                switch (type) {
-                    case HIT -> listener.onCacheHit(name, key);
-                    case MISS -> listener.onCacheMiss(name, key);
-                    case EXPIRED -> listener.onCacheExpiry(name, key);
-                    case PUT -> listener.onCachePut(name, key);
-                }
+                return objectMapper.readTree(response.getBody());
             } catch (Exception e) {
-                log.error("Error notifying listener: {}", e.getMessage(), e);
+                log.error("Error reloading data for key {}: {}", key, e.getMessage());
+                return oldValue;
             }
-        });
-    }
-    
-    private void cleanupExpiredEntries() {
-        store.entrySet().removeIf(entry -> {
-            boolean expired = entry.getValue().isExpired();
-            if (expired) {
-                notifyListeners(CacheEventType.EXPIRED, entry.getKey());
-            }
-            return expired;
-        });
+        }, executor);
     }
 }
 ```
-
-### CacheEntry.java
-```java
-@Data
-@AllArgsConstructor
-public class CacheEntry {
-    private final Object value;
-    private final long expirationTime;
-    private final Map<String, Object> metadata;
-    
-    public CacheEntry(Object value, Duration ttl) {
-        this.value = value;
-        this.expirationTime = System.currentTimeMillis() + ttl.toMillis();
-        this.metadata = new ConcurrentHashMap<>();
-    }
-    
-    public boolean isExpired() {
-        return System.currentTimeMillis() > expirationTime;
-    }
-    
-    public void addMetadata(String key, Object value) {
-        metadata.put(key, value);
-    }
-}
-```
-
-## 3. Service Layer
 
 ### CacheService.java
 ```java
@@ -190,405 +224,135 @@ public class CacheEntry {
 @Slf4j
 @RequiredArgsConstructor
 public class CacheService {
-    private final AsyncLoadingCache<String, JsonNode> asyncCache;
-    private final CustomCache customCache;
-    private final ObjectMapper objectMapper;
-    private final CacheMetricsCollector metricsCollector;
+    private final AsyncLoadingCache<String, JsonNode> cache;
+    private final CacheRefreshScheduler refreshScheduler;
+    private final MeterRegistry meterRegistry;
     
-    public CompletableFuture<JsonNode> getData(String key) {
-        return CompletableFuture.supplyAsync(() -> {
-            ValueWrapper cached = customCache.get(key);
-            if (cached != null) {
-                return (JsonNode) cached.get();
-            }
-            
-            return asyncCache.get(key)
-                .thenApply(data -> {
-                    customCache.put(key, data);
-                    return data;
-                })
-                .exceptionally(throwable -> {
-                    log.error("Error loading data for key {}: {}", 
-                        key, throwable.getMessage());
-                    metricsCollector.recordError(key);
-                    return null;
-                })
-                .join();
-        });
+    public void setRefreshTime(String key, LocalTime refreshTime) {
+        refreshScheduler.setRefreshTime(key, refreshTime);
     }
     
-    public CompletableFuture<Map<String, JsonNode>> getBulkData(Set<String> keys) {
-        return asyncCache.getAll(keys)
-            .thenApply(dataMap -> {
-                dataMap.forEach((key, value) -> 
-                    customCache.put(key, value));
-                return dataMap;
-            })
-            .exceptionally(throwable -> {
-                log.error("Error loading bulk data: {}", throwable.getMessage());
-                metricsCollector.recordBulkError(keys);
-                return Collections.emptyMap();
+    public void setMultipleRefreshTimes(String key, List<LocalTime> refreshTimes) {
+        refreshScheduler.setMultipleRefreshTimes(key, refreshTimes);
+    }
+    
+    public CompletableFuture<JsonNode> getData(String key) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        
+        return cache.get(key)
+            .whenComplete((result, error) -> {
+                sample.stop(meterRegistry.timer("cache.access.time", 
+                    "key", key,
+                    "status", error == null ? "success" : "error"
+                ));
+                
+                if (error != null) {
+                    log.error("Error retrieving data for key {}: {}", 
+                        key, error.getMessage());
+                    meterRegistry.counter("cache.errors", 
+                        "key", key).increment();
+                }
             });
     }
     
-    @Scheduled(fixedRateString = "${cache.cleanup.interval:300000}")
-    public void cleanup() {
-        // Implement cleanup logic
+    public CompletableFuture<Map<String, JsonNode>> getBulkData(Set<String> keys) {
+        return cache.getAll(keys);
     }
 }
 ```
-
-## 4. Controllers
 
 ### CacheController.java
 ```java
 @RestController
 @RequestMapping("/api/cache")
 @RequiredArgsConstructor
+@Slf4j
 public class CacheController {
     private final CacheService cacheService;
+    
+    @PostMapping("/{key}/refresh-time")
+    public ResponseEntity<Void> setRefreshTime(
+            @PathVariable String key,
+            @RequestBody LocalTime refreshTime) {
+        cacheService.setRefreshTime(key, refreshTime);
+        return ResponseEntity.ok().build();
+    }
+    
+    @PostMapping("/{key}/refresh-times")
+    public ResponseEntity<Void> setMultipleRefreshTimes(
+            @PathVariable String key,
+            @RequestBody List<LocalTime> refreshTimes) {
+        cacheService.setMultipleRefreshTimes(key, refreshTimes);
+        return ResponseEntity.ok().build();
+    }
     
     @GetMapping("/{key}")
     public CompletableFuture<ResponseEntity<JsonNode>> getData(
             @PathVariable String key) {
         return cacheService.getData(key)
-            .thenApply(data -> data != null 
-                ? ResponseEntity.ok(data)
-                : ResponseEntity.notFound().build()
-            );
+            .thenApply(ResponseEntity::ok)
+            .exceptionally(this::handleError);
     }
     
-    @PostMapping("/bulk")
-    public CompletableFuture<ResponseEntity<Map<String, JsonNode>>> getBulkData(
-            @RequestBody Set<String> keys) {
-        if (keys.size() > 100) {
-            return CompletableFuture.completedFuture(
-                ResponseEntity.badRequest()
-                    .header("X-Error", "Too many keys requested")
-                    .build()
-            );
-        }
-        
-        return cacheService.getBulkData(keys)
-            .thenApply(ResponseEntity::ok);
-    }
-    
-    @DeleteMapping("/{key}")
-    public ResponseEntity<Void> invalidateCache(@PathVariable String key) {
-        cacheService.invalidateKey(key);
-        return ResponseEntity.ok().build();
+    private <T> ResponseEntity<T> handleError(Throwable ex) {
+        log.error("Error processing request: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 }
 ```
 
-## 5. Monitoring
+## Usage Examples
 
-### CacheMetricsCollector.java
+### Setting Refresh Times
 ```java
-@Component
-@Slf4j
-public class CacheMetricsCollector {
-    private final MeterRegistry registry;
-    private final Map<String, Timer> loadTimers;
-    
-    public CacheMetricsCollector(MeterRegistry registry) {
-        this.registry = registry;
-        this.loadTimers = new ConcurrentHashMap<>();
-    }
-    
-    public void recordCacheHit(String key) {
-        registry.counter("cache.hits", 
-            "key", key).increment();
-    }
-    
-    public void recordCacheMiss(String key) {
-        registry.counter("cache.misses", 
-            "key", key).increment();
-    }
-    
-    public void recordLoadTime(String key, long milliseconds) {
-        loadTimers.computeIfAbsent(key, 
-            k -> registry.timer("cache.load.time", "key", k))
-            .record(milliseconds, TimeUnit.MILLISECONDS);
-    }
-    
-    public void recordError(String key) {
-        registry.counter("cache.errors", 
-            "key", key,
-            "type", "single").increment();
-    }
-    
-    public void recordBulkError(Set<String> keys) {
-        registry.counter("cache.errors", 
-            "keys", String.join(",", keys),
-            "type", "bulk").increment();
-    }
-}
+// Single refresh time
+cacheService.setRefreshTime("myKey", LocalTime.of(14, 30));
+
+// Multiple refresh times
+List<LocalTime> times = Arrays.asList(
+    LocalTime.of(9, 0),
+    LocalTime.of(14, 0),
+    LocalTime.of(18, 0)
+);
+cacheService.setMultipleRefreshTimes("myKey", times);
 ```
 
-## 6. Utilities
+### API Calls
+```bash
+# Set single refresh time
+curl -X POST "http://localhost:8080/api/cache/myKey/refresh-time" \
+     -H "Content-Type: application/json" \
+     -d '"14:30"'
 
-### CacheEventListener.java
-```java
-public interface CacheEventListener {
-    void onCacheHit(String cacheName, Object key);
-    void onCacheMiss(String cacheName, Object key);
-    void onCacheExpiry(String cacheName, Object key);
-    void onCachePut(String cacheName, Object key);
-}
+# Set multiple refresh times
+curl -X POST "http://localhost:8080/api/cache/myKey/refresh-times" \
+     -H "Content-Type: application/json" \
+     -d '["09:00", "14:00", "18:00"]'
+
+# Get cached data
+curl "http://localhost:8080/api/cache/myKey"
 ```
 
-### CacheException.java
-```java
-public class CacheException extends RuntimeException {
-    public CacheException(String message) {
-        super(message);
-    }
-    
-    public CacheException(String message, Throwable cause) {
-        super(message, cause);
-    }
-}
+## Monitoring
 
-public class CacheLoadingException extends CacheException {
-    public CacheLoadingException(String message) {
-        super(message);
-    }
-    
-    public CacheLoadingException(String message, Throwable cause) {
-        super(message, cause);
-    }
-}
+Access metrics through Actuator endpoints:
+```bash
+# Cache statistics
+curl "http://localhost:8080/actuator/metrics/cache.size"
+curl "http://localhost:8080/actuator/metrics/cache.hits"
+curl "http://localhost:8080/actuator/metrics/cache.misses"
 ```
 
-### Application Properties
-```properties
-# Cache Configuration
-cache.default-expiration=30
-cache.maximum-size=10000
-cache.cleanup.interval=300000
+## Error Handling
 
-# API Configuration
-api.base-url=https://your-api-url
+The system includes comprehensive error handling:
+- Automatic fallback to old values on refresh failure
+- Retry mechanism for failed loads
+- Detailed error logging
+- Metrics for monitoring errors
 
-# Metrics Configuration
-management.endpoints.web.exposure.include=prometheus,health,info
-management.metrics.export.prometheus.enabled=true
-```
-
-### Unit Test Example
-```java
-@SpringBootTest
-class CacheServiceTest {
-    @MockBean
-    private AsyncLoadingCache<String, JsonNode> asyncCache;
-    
-    @Autowired
-    private CacheService cacheService;
-    
-    @Test
-    void whenDataExists_thenReturnFromCache() {
-        // Test implementation
-    }
-    
-    @Test
-    void whenDataNotExists_thenLoadFromSource() {
-        // Test implementation
-    }
-}
-```
-
-This documentation provides complete, runnable code for all major components of the caching system. Each component is designed to be modular and extensible.
-
-pom.xml 
-
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.2</version>
-        <relativePath/>
-    </parent>
-
-    <groupId>com.example</groupId>
-    <artifactId>smart-cache-system</artifactId>
-    <version>1.0.0</version>
-    <name>smart-cache-system</name>
-    <description>High-performance caching system with smart refresh strategies</description>
-
-    <properties>
-        <java.version>17</java.version>
-        <caffeine.version>3.1.8</caffeine.version>
-        <jackson.version>2.16.1</jackson.version>
-        <lombok.version>1.18.30</lombok.version>
-        <micrometer.version>1.12.2</micrometer.version>
-        <resilience4j.version>2.1.0</resilience4j.version>
-        <commons-lang3.version>3.14.0</commons-lang3.version>
-        <guava.version>32.1.3-jre</guava.version>
-    </properties>
-
-    <dependencies>
-        <!-- Spring Boot Core -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-cache</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-
-        <!-- Cache Implementation -->
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-            <version>${caffeine.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-
-        <!-- JSON Processing -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-
-        <!-- Metrics and Monitoring -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-            <version>${micrometer.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
-            <version>${micrometer.version}</version>
-        </dependency>
-
-        <!-- Resilience and Circuit Breaking -->
-        <dependency>
-            <groupId>io.github.resilience4j</groupId>
-            <artifactId>resilience4j-spring-boot3</artifactId>
-            <version>${resilience4j.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.resilience4j</groupId>
-            <artifactId>resilience4j-cache</artifactId>
-            <version>${resilience4j.version}</version>
-        </dependency>
-
-        <!-- Utility Libraries -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${commons-lang3.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>${guava.version}</version>
-        </dependency>
-
-        <!-- Test Dependencies -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <includes>
-                        <include>**/*Test.java</include>
-                        <include>**/*Tests.java</include>
-                    </includes>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-    <repositories>
-        <repository>
-            <id>spring-milestones</id>
-            <name>Spring Milestones</name>
-            <url>https://repo.spring.io/milestone</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-</project>
+Would you like me to:
+1. Add more configuration examples?
+2. Include additional implementation details?
+3. Add more usage scenarios?
+4. Expand any specific component?
