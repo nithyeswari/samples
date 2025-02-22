@@ -1,6 +1,4 @@
-I'd be happy to help you replace your JSP/JSPF system with a React implementation while maintaining the same Ajax functionality.
 
-Let me create a 
 
 ## Implementation Guide
 
