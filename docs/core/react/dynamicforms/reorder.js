@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 
-const SimpleFormBuilder = () => {
+const FormBuilder = () => {
   // Form state
   const [elements, setElements] = useState([]);
   const [jsonInput, setJsonInput] = useState('');
   const [jsonOutput, setJsonOutput] = useState('');
   
-  // Sample JSON
+  // Sample JSON with systemName property
   const sampleJson = JSON.stringify([
-    { id: "field1", type: "text", label: "First Name" },
-    { id: "field2", type: "text", label: "Last Name" },
-    { id: "field3", type: "email", label: "Email Address" },
-    { id: "field4", type: "tel", label: "Phone Number" },
-    { id: "field5", type: "select", label: "Country" }
+    { id: "field1", type: "text", label: "First Name", systemName: "firstName" },
+    { id: "field2", type: "text", label: "Last Name", systemName: "lastName" },
+    { id: "field3", type: "email", label: "Email Address", systemName: "emailAddress" },
+    { id: "field4", type: "tel", label: "Phone Number", systemName: "phoneNumber" },
+    { id: "field5", type: "select", label: "Country", systemName: "country" }
   ], null, 2);
 
   // Load sample data on start
@@ -23,11 +23,32 @@ const SimpleFormBuilder = () => {
   // Generate ID
   const generateId = () => `field-${Math.random().toString(36).substr(2, 9)}`;
   
+  // Convert label to systemName (camelCase)
+  const labelToSystemName = (label) => {
+    return label
+      .toLowerCase()
+      .replace(/[^a-zA-Z0-9]+(.)/g, (_, chr) => chr.toUpperCase())
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .replace(/^[A-Z]/, c => c.toLowerCase());
+  };
+  
   // Load from JSON
   const loadFromJson = () => {
     try {
       const parsed = JSON.parse(jsonInput);
-      setElements(parsed);
+      
+      // Ensure all elements have systemName
+      const parsedWithSystemNames = parsed.map(item => {
+        if (!item.systemName) {
+          return {
+            ...item,
+            systemName: labelToSystemName(item.label)
+          };
+        }
+        return item;
+      });
+      
+      setElements(parsedWithSystemNames);
     } catch (e) {
       alert("Invalid JSON format");
     }
@@ -41,12 +62,14 @@ const SimpleFormBuilder = () => {
   
   // Add a group
   const addGroup = () => {
+    const groupName = "New Group";
     setElements([
       ...elements, 
       {
         id: generateId(),
         type: "group",
-        label: "New Group",
+        label: groupName,
+        systemName: labelToSystemName(groupName),
         fields: []
       }
     ]);
@@ -170,10 +193,22 @@ const SimpleFormBuilder = () => {
     setElements(newElements);
   };
   
-  // Update label
+  // Update label and systemName
   const updateLabel = (id, newLabel) => {
     const newElements = elements.map(el => 
-      el.id === id ? {...el, label: newLabel} : el
+      el.id === id ? {
+        ...el, 
+        label: newLabel,
+        systemName: labelToSystemName(newLabel)
+      } : el
+    );
+    setElements(newElements);
+  };
+  
+  // Update systemName directly
+  const updateSystemName = (id, newSystemName) => {
+    const newElements = elements.map(el => 
+      el.id === id ? {...el, systemName: newSystemName} : el
     );
     setElements(newElements);
   };
@@ -187,7 +222,30 @@ const SimpleFormBuilder = () => {
         newElements[i] = {
           ...newElements[i],
           fields: newElements[i].fields.map(field => 
-            field.id === fieldId ? {...field, label: newLabel} : field
+            field.id === fieldId ? {
+              ...field, 
+              label: newLabel,
+              systemName: labelToSystemName(newLabel)
+            } : field
+          )
+        };
+        break;
+      }
+    }
+    
+    setElements(newElements);
+  };
+  
+  // Update group field systemName
+  const updateGroupFieldSystemName = (fieldId, groupId, newSystemName) => {
+    const newElements = [...elements];
+    
+    for (let i = 0; i < newElements.length; i++) {
+      if (newElements[i].id === groupId) {
+        newElements[i] = {
+          ...newElements[i],
+          fields: newElements[i].fields.map(field => 
+            field.id === fieldId ? {...field, systemName: newSystemName} : field
           )
         };
         break;
@@ -200,7 +258,7 @@ const SimpleFormBuilder = () => {
   // Render the form elements
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Simple Form Builder</h1>
+      <h1 className="text-2xl font-bold mb-4">Form Builder with systemName</h1>
       
       <div className="flex space-x-4 mb-4">
         <div className="flex-1">
@@ -265,20 +323,31 @@ const SimpleFormBuilder = () => {
                 >
                   {element.type === 'group' ? (
                     <div>
-                      <div className="flex justify-between items-center mb-3 pb-2 border-b border-blue-200">
-                        <input
-                          type="text"
-                          value={element.label}
-                          onChange={(e) => updateLabel(element.id, e.target.value)}
-                          className="bg-transparent font-semibold outline-none"
-                        />
-                        <div>
-                          <button 
-                            className="text-red-500 hover:text-red-700 text-sm px-2 py-1"
-                            onClick={() => deleteElement(element.id)}
-                          >
-                            Delete Group
-                          </button>
+                      <div className="flex flex-col mb-3 pb-2 border-b border-blue-200">
+                        <div className="flex justify-between items-center mb-2">
+                          <input
+                            type="text"
+                            value={element.label}
+                            onChange={(e) => updateLabel(element.id, e.target.value)}
+                            className="bg-transparent font-semibold outline-none"
+                          />
+                          <div>
+                            <button 
+                              className="text-red-500 hover:text-red-700 text-sm px-2 py-1"
+                              onClick={() => deleteElement(element.id)}
+                            >
+                              Delete Group
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-600 flex items-center">
+                          <span className="mr-1">systemName:</span>
+                          <input
+                            type="text"
+                            value={element.systemName}
+                            onChange={(e) => updateSystemName(element.id, e.target.value)}
+                            className="bg-transparent outline-none border-b border-gray-300 flex-grow"
+                          />
                         </div>
                       </div>
                       
@@ -288,30 +357,41 @@ const SimpleFormBuilder = () => {
                           element.fields.map((field) => (
                             <div
                               key={field.id}
-                              className="p-3 bg-white border border-gray-200 rounded flex justify-between items-center"
+                              className="p-3 bg-white border border-gray-200 rounded"
                             >
-                              <div className="flex items-center">
-                                <span className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">{field.type}</span>
+                              <div className="flex justify-between items-center mb-2">
+                                <div className="flex items-center">
+                                  <span className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">{field.type}</span>
+                                  <input
+                                    type="text"
+                                    value={field.label}
+                                    onChange={(e) => updateGroupFieldLabel(field.id, element.id, e.target.value)}
+                                    className="outline-none"
+                                  />
+                                </div>
+                                <div>
+                                  <button
+                                    className="text-blue-500 hover:text-blue-700 text-sm mr-2 px-2 py-1"
+                                    onClick={() => moveOutOfGroup(field.id, element.id)}
+                                  >
+                                    Move Out
+                                  </button>
+                                  <button
+                                    className="text-red-500 hover:text-red-700 text-sm px-2 py-1"
+                                    onClick={() => deleteGroupField(field.id, element.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="text-sm text-gray-600 flex items-center">
+                                <span className="mr-1">systemName:</span>
                                 <input
                                   type="text"
-                                  value={field.label}
-                                  onChange={(e) => updateGroupFieldLabel(field.id, element.id, e.target.value)}
-                                  className="outline-none"
+                                  value={field.systemName}
+                                  onChange={(e) => updateGroupFieldSystemName(field.id, element.id, e.target.value)}
+                                  className="bg-transparent outline-none border-b border-gray-300 flex-grow"
                                 />
-                              </div>
-                              <div>
-                                <button
-                                  className="text-blue-500 hover:text-blue-700 text-sm mr-2 px-2 py-1"
-                                  onClick={() => moveOutOfGroup(field.id, element.id)}
-                                >
-                                  Move Out
-                                </button>
-                                <button
-                                  className="text-red-500 hover:text-red-700 text-sm px-2 py-1"
-                                  onClick={() => deleteGroupField(field.id, element.id)}
-                                >
-                                  Delete
-                                </button>
                               </div>
                             </div>
                           ))
@@ -341,40 +421,51 @@ const SimpleFormBuilder = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center">
-                        <span className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">{element.type}</span>
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center">
+                          <span className="bg-gray-100 px-2 py-1 rounded text-xs mr-2">{element.type}</span>
+                          <input
+                            type="text"
+                            value={element.label}
+                            onChange={(e) => updateLabel(element.id, e.target.value)}
+                            className="outline-none"
+                          />
+                        </div>
+                        <div className="flex">
+                          <div className="mr-2">
+                            <select 
+                              className="text-sm border rounded px-2 py-1"
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  moveIntoGroup(element.id, e.target.value);
+                                  e.target.value = ''; // Reset select
+                                }
+                              }}
+                              value=""
+                            >
+                              <option value="">Move to group...</option>
+                              {elements.filter(el => el.type === 'group').map(group => (
+                                <option key={group.id} value={group.id}>{group.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <button
+                            className="text-red-500 hover:text-red-700 px-2 py-1 text-sm"
+                            onClick={() => deleteElement(element.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600 flex items-center">
+                        <span className="mr-1">systemName:</span>
                         <input
                           type="text"
-                          value={element.label}
-                          onChange={(e) => updateLabel(element.id, e.target.value)}
-                          className="outline-none"
+                          value={element.systemName}
+                          onChange={(e) => updateSystemName(element.id, e.target.value)}
+                          className="bg-transparent outline-none border-b border-gray-300 flex-grow"
                         />
-                      </div>
-                      <div className="flex">
-                        <div className="mr-2">
-                          <select 
-                            className="text-sm border rounded px-2 py-1"
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                moveIntoGroup(element.id, e.target.value);
-                                e.target.value = ''; // Reset select
-                              }
-                            }}
-                            value=""
-                          >
-                            <option value="">Move to group...</option>
-                            {elements.filter(el => el.type === 'group').map(group => (
-                              <option key={group.id} value={group.id}>{group.label}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <button
-                          className="text-red-500 hover:text-red-700 px-2 py-1 text-sm"
-                          onClick={() => deleteElement(element.id)}
-                        >
-                          Delete
-                        </button>
                       </div>
                     </div>
                   )}
@@ -388,11 +479,13 @@ const SimpleFormBuilder = () => {
       <div className="text-sm text-gray-600">
         <p>
           <strong>Instructions:</strong> Load fields from JSON, then use the "Move to group" dropdown 
-          or buttons below each group to organize fields. Use "Move Out" to remove fields from groups.
+          or buttons below each group to organize fields. Each field has a label (display name) and 
+          systemName (for programmatic reference). The systemName is auto-generated from the label
+          in camelCase format, but you can edit it directly.
         </p>
       </div>
     </div>
   );
 };
 
-export default SimpleFormBuilder;
+export default FormBuilder;
