@@ -1,8 +1,7 @@
-9# Automated Testing Framework with Playwright
+# Automated Testing Framework with Playwright
 
 ## Overview
 
-This repository contains a comprehensive automated testing framework using Playwright to perform various types of checks on web and mobile applications:
 
 - **Database Checks**: Verify data integrity, consistency, and performance
 - **Sustainability Checks**: Measure and optimize resource consumption and carbon footprint
