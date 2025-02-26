@@ -1,4 +1,4 @@
-# Automated Testing Framework with Playwright
+9# Automated Testing Framework with Playwright
 
 ## Overview
 
@@ -489,11 +489,3 @@ npm run lint
 npm run test:unit
 ```
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Demo
-
-A live demo of the reporting dashboard is available at:
-[https://your-username.github.io/playwright-automation-framework/](https://your-username.github.io/playwright-automation-framework/)
