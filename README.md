@@ -9,9 +9,8 @@
 6. [LEAD Engineer](LEAD.md)
 7. [Leaders To Follow](INDUSTRY_LEADERS.md)
 8. [Opensources Projects](OPEN_SOURCE.md)
-9. [Other repos](REPOSITORIES.md)
-10.
-7. Follow the guides in order or jump to specific sections based on your needs
+9. [Other repos](REPOSITORIES.md) 
+10  [QE Engineer](docs/core/qe/MOBILE.md)
 
 ## Contributing
 
