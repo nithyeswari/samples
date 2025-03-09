@@ -21,7 +21,7 @@ MosaicUI is an all-in-one library that combines micro-frontend architecture with
 - 🔄 **JSON-driven rendering** - Define UIs with simple JSON layouts
 - 🔌 **Pluggable component system** - Register and use components dynamically
 - 🌐 **Server-driven UI** - Update layouts from the backend without deploying frontend code
-- 🎭 **Framework agnostic** - Works with React, Vue, and Angular
+- 🎭 **Framework agnostic** - Works with React for now can be extended for other framework and lib, Vue, and Angular
 - 🔧 **Webpack Module Federation** - Built-in integration with module federation
 - 📦 **All-in-one package** - Core renderer, layout management, and webpack tools in a single library
 
